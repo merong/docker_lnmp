@@ -1,0 +1,55 @@
+version: '2.2'
+services:
+  # web server
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # app
+      - ./app:/var/www/html/app
+      # nginx configs
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/:ro
+      # certificates
+      - ./docker/nginx/ca/server.crt/:/etc/nginx/server.crt:ro
+      - ./docker/nginx/ca/server.key/:/etc/nginx/server.key:ro
+    links:
+      - fpm:__DOCKER_PHP_FPM__
+
+  # php-fpm
+  fpm:
+    build: ./docker/php-fpm
+    ports:
+      - "9000"
+    volumes:
+      - ./app:/var/www/html/app
+      # Your php.ini
+      - ./docker/php-fpm/php.ini:/usr/local/etc/php/php.ini:ro
+      # environment:
+      # Set your APP env variables here:
+      # - APP_KEY=
+      # - DB_HOST=
+      # - DB_DATABASE=dev
+      # - DB_USERNAME=dev
+      # - DB_PASSWORD=dev
+    links:
+      - mysql:mysql
+
+  # database
+  mysql:
+    image: mysql:5.7
+    container_name: mysql-5.7
+    restart: always
+    ports:
+      # Allow client to access 3306
+      - "3306:3306"
+    volumes:
+      # NOTE: your data will be stored in ./mysql
+      - ./docker/mysql:/var/lib/mysql
+    environment:
+          MYSQL_DATABASE: "dev"
+          MYSQL_USER: "dev"
+          MYSQL_PASSWORD: "dev"
+          MYSQL_ROOT_PASSWORD: "root"
